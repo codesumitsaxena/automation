@@ -1,0 +1,210 @@
+{
+  "total": 6,
+  "page": 0,
+  "data": [
+    {
+      "id": 10101,
+      "person_id": 10101,
+      "first_name": "Sam",
+      "last_name": "Altman",
+      "full_name": "Sam Altman",
+      "role_title": "Chief Executive Officer & Co-Founder",
+      "normalized_title": "CEO",
+      "seniority": "c_level",
+      "role_is_current": true,
+      "role_position_start_date": "2019-03-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "samaltman",
+      "linkedin_url": "https://www.linkedin.com/in/samaltman",
+      "email": "sam@openai.com",
+      "phone": "+1-415-555-0101",
+      "phones": ["+1-415-555-0101"],
+      "emails": ["sam@openai.com", "saltman@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "CEO at OpenAI | Former President at Y Combinator",
+      "about": "Entrepreneur, investor, and programmer. Leading OpenAI's mission to ensure that artificial general intelligence benefits all of humanity.",
+      "skills": ["Artificial Intelligence", "Entrepreneurship", "Venture Capital", "Product Strategy", "Executive Leadership"]
+    },
+    {
+      "id": 10102,
+      "person_id": 10102,
+      "first_name": "Greg",
+      "last_name": "Brockman",
+      "full_name": "Greg Brockman",
+      "role_title": "President & Co-Founder",
+      "normalized_title": "President",
+      "seniority": "c_level",
+      "role_is_current": true,
+      "role_position_start_date": "2015-12-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "gregbrockman",
+      "linkedin_url": "https://www.linkedin.com/in/gregbrockman",
+      "email": "greg@openai.com",
+      "phone": "+1-415-555-0102",
+      "phones": ["+1-415-555-0102"],
+      "emails": ["greg@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "President & Co-Founder at OpenAI",
+      "about": "Co-founder and President of OpenAI. Previously CTO at Stripe where I helped build payment infrastructure for the internet from early stages.",
+      "skills": ["Distributed Systems", "Software Architecture", "Machine Learning", "Strategic Partnerships", "Engineering Management"]
+    },
+    {
+      "id": 10103,
+      "person_id": 10103,
+      "first_name": "Brad",
+      "last_name": "Lightcap",
+      "full_name": "Brad Lightcap",
+      "role_title": "Chief Operating Officer & VP Operations",
+      "normalized_title": "COO",
+      "seniority": "c_level",
+      "role_is_current": true,
+      "role_position_start_date": "2018-08-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "bradlightcap",
+      "linkedin_url": "https://www.linkedin.com/in/bradlightcap",
+      "email": "brad@openai.com",
+      "phone": "+1-415-555-0103",
+      "phones": ["+1-415-555-0103"],
+      "emails": ["brad@openai.com", "blightcap@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "Chief Operating Officer at OpenAI | Leading Business Operations and Commercialization",
+      "about": "Leading commercial operations, enterprise deployments, finance, and global business development at OpenAI. Overseeing OpenAI Startup Fund.",
+      "skills": ["Business Operations", "Enterprise Sales", "Corporate Finance", "Strategic Scaling", "AI Commercialization"]
+    },
+    {
+      "id": 10104,
+      "person_id": 10104,
+      "first_name": "Mark",
+      "last_name": "Chen",
+      "full_name": "Mark Chen",
+      "role_title": "Senior Vice President of Research & VP Research",
+      "normalized_title": "VP Research",
+      "seniority": "vp",
+      "role_is_current": true,
+      "role_position_start_date": "2020-04-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "markchen-ai",
+      "linkedin_url": "https://www.linkedin.com/in/markchen-ai",
+      "email": "mchen@openai.com",
+      "phone": "+1-415-555-0104",
+      "phones": ["+1-415-555-0104"],
+      "emails": ["mchen@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "Senior Vice President of Research at OpenAI",
+      "about": "Directing core model research and frontier reasoning systems at OpenAI, including GPT series, multimodal models, and safety alignment.",
+      "skills": ["Deep Learning", "Generative AI", "Large Language Models", "Reinforcement Learning", "Research Leadership"]
+    },
+    {
+      "id": 10105,
+      "person_id": 10105,
+      "first_name": "Logan",
+      "last_name": "Kilpatrick",
+      "full_name": "Logan Kilpatrick",
+      "role_title": "Head of Developer Relations",
+      "normalized_title": "Head of Developer Relations",
+      "seniority": "director",
+      "role_is_current": true,
+      "role_position_start_date": "2022-10-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "logankilpatrick",
+      "linkedin_url": "https://www.linkedin.com/in/logankilpatrick",
+      "email": "logan@openai.com",
+      "phone": "+1-415-555-0105",
+      "phones": ["+1-415-555-0105"],
+      "emails": ["logan@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "Head of Developer Relations at OpenAI | Supporting 2M+ Developers",
+      "about": "Leading developer advocacy, developer experience, community programs, and API ecosystem partnerships across the global AI ecosystem.",
+      "skills": ["Developer Relations", "API Design", "Technical Community Building", "Public Speaking", "Developer Advocacy"]
+    },
+    {
+      "id": 10106,
+      "person_id": 10106,
+      "first_name": "Alex",
+      "last_name": "Taylor",
+      "full_name": "Alex Taylor",
+      "role_title": "Junior Data Annotator Intern",
+      "normalized_title": "Intern",
+      "seniority": "entry",
+      "role_is_current": true,
+      "role_position_start_date": "2023-06-01",
+      "organization": {
+        "id": 984210,
+        "name": "OpenAI",
+        "domain": "openai.com",
+        "linkedin_url": "https://www.linkedin.com/company/openai"
+      },
+      "linkedin_public_identifier": "alextaylor-annotator",
+      "linkedin_url": "https://www.linkedin.com/in/alextaylor-annotator",
+      "email": "ataylor@openai.com",
+      "phone": "+1-415-555-0106",
+      "phones": ["+1-415-555-0106"],
+      "emails": ["ataylor@openai.com"],
+      "location": {
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "headline": "Data Annotation Intern at OpenAI",
+      "about": "Working with human-in-the-loop annotation pipelines.",
+      "skills": ["Data Annotation", "Python", "RLHF Tagging"]
+    }
+  ]
+}

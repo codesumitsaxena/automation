@@ -1,0 +1,54 @@
+{
+  "total": 1,
+  "page": 0,
+  "data": [
+    {
+      "id": 984210,
+      "name": "OpenAI",
+      "legal_name": "OpenAI, Inc.",
+      "domain": "openai.com",
+      "domains": ["openai.com", "chatgpt.com"],
+      "website_url": "https://openai.com",
+      "description": "OpenAI is an AI research and deployment company dedicated to ensuring that artificial general intelligence benefits all of humanity. Creator of ChatGPT, GPT-4, DALL-E, and Sora.",
+      "short_description": "AI research and deployment company developing safe artificial general intelligence.",
+      "industry": "Artificial Intelligence",
+      "industries": ["Artificial Intelligence", "Software Development", "Machine Learning"],
+      "headcount": 770,
+      "employees_range": "501-1000",
+      "estimated_annual_revenue": 3400000000,
+      "revenue_range": "$1B to $5B",
+      "founded_year": 2015,
+      "phone": "+1-415-555-0199",
+      "linkedin_public_identifier": "openai",
+      "linkedin_url": "https://www.linkedin.com/company/openai",
+      "twitter_url": "https://twitter.com/OpenAI",
+      "location": {
+        "address": "3180 18th St",
+        "city": "San Francisco",
+        "state": "California",
+        "state_code": "CA",
+        "postal_code": "94110",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "funding": {
+        "total_funding_usd": 11300000000,
+        "latest_round": "Secondary Market",
+        "latest_round_date": "2024-02-16",
+        "investor_count": 14
+      },
+      "technologies": [
+        "Python",
+        "PyTorch",
+        "Kubernetes",
+        "React",
+        "Next.js",
+        "Tailwind CSS",
+        "FastAPI",
+        "PostgreSQL",
+        "Docker",
+        "Azure Cloud"
+      ]
+    }
+  ]
+}
