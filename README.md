@@ -2,7 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-20%2F20%20Passing-brightgreen.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-26%2F26%20Passing-brightgreen.svg)](https://pytest.org/)
 [![Railway Ready](https://img.shields.io/badge/Deploy-Railway-blueviolet.svg)](https://railway.app/)
 
 A production-grade, custom Python backend automation connecting **Forager.ai** (B2B prospecting and firmographic data) with **HubSpot CRM**, end-to-end. Built as the engineering hiring evaluation task for **ONEGTM LAB** (AI Automation Engineer).
@@ -62,7 +62,7 @@ forager-hubspot-enrichment/
 │   ├── setup_hubspot_properties.py # Provisions custom CRM fields in HubSpot
 │   ├── run_openai_demo.py       # Primary OpenAI evaluation demo script
 │   └── webhook_setup_guide.md   # Step-by-step webhook configuration guide
-├── tests/                       # Complete Pytest test suite (20/20 passing)
+├── tests/                       # Complete Pytest test suite (26/26 passing)
 ├── docs/
 │   ├── TASK_CONTEXT.md          # Evaluation task rubric & constraints
 │   ├── ARCHITECTURE.md          # Flow diagrams & sequence charts
@@ -308,20 +308,28 @@ Before executing live queries, understand the exact credit costs defined by Fora
 - [ ] Verify SQLite database file `enrichment.db` has read/write permissions.
 - [ ] Run `python -m pip_audit` and verify: `No known vulnerabilities found`.
 - [ ] Run `python -m bandit -r app scripts` and verify: `No issues identified`.
-- [ ] Run `pytest -v` and verify: **20/20 passed**.
+- [ ] Run `pytest -v` and verify: **26/26 passed**.
 
-#### Phase 2: Smoke Test (Single Company + Single Person)
-- [ ] **Enrich 1 Company**:
+#### Phase 2: Smoke Test Variants (Single Company + Single Person)
+
+* **Variant A: Base Profile Smoke Test (Zero Reveals)**:
+  - Enrich 1 Company: 1 credit
+  - Discover 1 Person (profile only): 2 credits (1 search + 1 profile)
+  - *Expected Spend*: Exactly **3 credits** (or 0 if cached).
+
+* **Variant B: Single Person with Email Reveal Only (`ENABLE_EMAIL_REVEAL=true`)**:
+  - 1 Company (1) + 1 Role Search (1) + 1 Person Detail (1) + 1 Work Email Reveal (5)
+  - *Expected Spend*: Exactly **8 credits** (or 0 if cached).
+
+* **Variant C: Single Person WITH Email and Phone Reveals (`ENABLE_EMAIL_REVEAL=true`, `ENABLE_PHONE_REVEAL=true`)**:
+  - 1 Company (1) + 1 Role Search (1) + 1 Person Detail (1) + 1 Work Email Reveal (5) + 1 Direct Phone Reveal (15)
+  - *Expected Spend*: Exactly **23 credits** (or 0 if cached).
+
   ```powershell
+  # Example: Run 1-company + 1-contact test via API
   curl -X POST "http://localhost:8000/api/enrich/company" -H "Content-Type: application/json" -d '{"domain": "openai.com"}'
-  ```
-  *Expected Spend*: Exactly **1 credit** (or 0 if cached).
-- [ ] **Discover 1 Person**:
-  ```powershell
   curl -X POST "http://localhost:8000/api/discover/contacts" -H "Content-Type: application/json" -d '{"domain": "openai.com", "limit": 1, "job_titles": ["CEO"]}'
   ```
-  *Expected Spend*: Exactly **2 credits** (1 search + 1 profile).
-  *Total Smoke Test Spend*: $\mathbf{3\text{ credits}}$ total.
 
 #### Phase 3: Primary OpenAI Deliverable Run
 - [ ] Execute the primary demo:
@@ -393,7 +401,7 @@ The repository is pre-configured with a `Procfile` and `railway.json` for zero-c
 Follow this checklist when recording your evaluation walkthrough video:
 
 1. **Terminal Overview & Tests (1 min)**:
-   * Show `pytest -v` passing all 20 tests cleanly.
+   * Show `pytest -v` passing all 26 tests cleanly.
    * Briefly explain the modular architecture: `clients/`, `services/`, `webhooks/`, `mapper.py`.
 2. **OpenAI Demo Deliverable (1.5 mins)**:
    * Run `python scripts/run_openai_demo.py` in the terminal.

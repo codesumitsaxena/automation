@@ -67,9 +67,13 @@ class Settings(BaseSettings):
         default="CEO,CTO,VP,Head of,Director,Founder,Co-Founder,President",
         description="Comma-separated list of job title keywords to filter discovered contacts",
     )
-    enable_email_phone_reveal: bool = Field(
+    enable_email_reveal: bool = Field(
         default=False,
-        description="Controls whether high-cost work email and mobile phone reveals are executed in live mode",
+        description="Controls whether work email reveals (5 credits/contact) are executed in live mode",
+    )
+    enable_phone_reveal: bool = Field(
+        default=False,
+        description="Controls whether mobile/direct phone reveals (15 credits/contact) are executed in live mode",
     )
 
     # Dashboard Authentication
@@ -101,6 +105,11 @@ class Settings(BaseSettings):
     def is_configured_for_live_forager(self) -> bool:
         """Check if Forager credentials are provided."""
         return bool(self.forager_api_key and self.forager_api_key.strip() and not self.forager_api_key.startswith("your_"))
+
+    @property
+    def enable_email_phone_reveal(self) -> bool:
+        """Backwards compatibility for legacy combined reveal flag."""
+        return self.enable_email_reveal or self.enable_phone_reveal
 
 
 @lru_cache

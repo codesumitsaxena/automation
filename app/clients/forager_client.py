@@ -36,6 +36,7 @@ class ForagerEndpoints:
     PERSON_REVERSE_PHONE = "/api/{account_id}/datastorage/person_detail_reverse_lookup/by_phone_number/"
     CONTACT_WORK_EMAIL = "/api/{account_id}/datastorage/person_contacts_lookup/work_emails/"
     CONTACT_PHONE = "/api/{account_id}/datastorage/person_contacts_lookup/phone_numbers/"
+    CREDITS_BALANCE = "/api/{account_id}/subscription/credits/"
 
 
 class ForagerCreditCosts:
@@ -303,3 +304,42 @@ class ForagerClient:
         if data:
             return data[0]
         return None
+
+    async def get_credit_balance(self) -> int:
+        """Fetch the active credit balance from Forager API (free metadata endpoint).
+
+        In DRY_RUN mode, returns 50 (or ledger remaining balance).
+        In LIVE mode, queries Forager's subscription credits endpoint. If unreachable,
+        falls back gracefully to the local database ledger calculation.
+        """
+        if self.dry_run:
+            logger.info("DRY_RUN=True: Using simulated credit balance (50 credits)")
+            return 50
+
+        endpoint = self._resolve_endpoint(ForagerEndpoints.CREDITS_BALANCE)
+        url = f"{self.base_url}{endpoint}"
+        logger.info("Querying live Forager credit balance from: %s", url)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=self._get_headers())
+                if response.status_code == 200:
+                    payload = response.json()
+                    if isinstance(payload, dict):
+                        balance = (
+                            payload.get("credits_remaining")
+                            or payload.get("balance")
+                            or payload.get("credits")
+                            or (payload.get("data", {}).get("credits") if isinstance(payload.get("data"), dict) else None)
+                            or (payload.get("data", {}).get("balance") if isinstance(payload.get("data"), dict) else None)
+                        )
+                        if balance is not None:
+                            logger.info("Live Forager API reported active balance: %d credits", int(balance))
+                            return int(balance)
+        except Exception as exc:
+            logger.warning("Could not fetch remote Forager credit balance (%s). Falling back to local ledger.", exc)
+
+        # Fallback to local SQLite ledger
+        from app.services.credit_guard import CreditGuard
+
+        ledger = CreditGuard.get_ledger_summary()
+        return int(ledger.get("credits_remaining", 50))

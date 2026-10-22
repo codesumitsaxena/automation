@@ -133,8 +133,8 @@ class ContactService:
             slug = linkedin_url.rstrip("/").split("/")[-1]
             raw_person = await self.forager.get_person_details(
                 linkedin_public_identifier=slug,
-                reveal_emails=settings.enable_email_phone_reveal,
-                reveal_phones=settings.enable_email_phone_reveal,
+                reveal_emails=settings.enable_email_reveal,
+                reveal_phones=settings.enable_phone_reveal,
             )
 
         if not raw_person and company_domain:

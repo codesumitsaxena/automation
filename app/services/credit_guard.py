@@ -1,5 +1,4 @@
-"""Credit guardrail management, budget limits, and credit expenditure tracking."""
-
+from dataclasses import dataclass, field
 import uuid
 from typing import Any
 
@@ -16,6 +15,25 @@ logger = setup_logging(settings.log_level)
 
 class CreditLimitExceededError(Exception):
     """Raised when an operation would exceed the configured credit safety budget."""
+
+
+@dataclass
+class RevealPlan:
+    """Projected execution plan and reveal budget allocation."""
+    remaining_balance: int
+    target_contacts: int
+    enrich_company: bool
+    base_cost: int
+    emails_allowed: int
+    email_cost: int
+    phones_allowed: int
+    phone_cost: int
+    total_estimated_cost: int
+    balance_after_run: int
+    safety_reserve: int
+    plan_summary: str
+    can_proceed: bool
+    notes: list[str] = field(default_factory=list)
 
 
 class CreditGuard:
@@ -65,6 +83,127 @@ class CreditGuard:
             "dry_run": settings.dry_run,
             "real_cost_if_dry_run": 0 if settings.dry_run else total,
         }
+
+    @staticmethod
+    def plan_reveal_budget(
+        remaining_balance: int,
+        target_contacts: int = 5,
+        enrich_company: bool = True,
+        enable_email_reveal: bool = False,
+        enable_phone_reveal: bool = False,
+        safety_reserve: int = 3,
+    ) -> RevealPlan:
+        """Plan contact email and phone reveals based on remaining Forager credit balance.
+
+        Cost table:
+          - Company firmographics lookup: 1 credit
+          - People role search: 1 credit
+          - Person detail lookup: 1 credit per contact
+          - Work email reveal: 5 credits per contact
+          - Phone number reveal: 15 credits per contact
+
+        Rules:
+          - Base operations (company, role search, contact details) are reserved first.
+          - Safety reserve (default: 3 credits) must remain intact after all operations.
+          - Phone reveals are ONLY awarded to contacts who already receive an email reveal.
+          - Phone reveals are ONLY awarded if balance after the reveal stays >= safety_reserve.
+        """
+        notes: list[str] = []
+
+        company_cost = 1 if enrich_company else 0
+        search_cost = 1 if target_contacts > 0 else 0
+        detail_cost = target_contacts * 1
+        base_cost = company_cost + search_cost + detail_cost
+
+        # If remaining balance cannot even cover base cost
+        if remaining_balance < base_cost:
+            notes.append(
+                f"Insufficient balance ({remaining_balance}) to cover base enrichment cost ({base_cost})."
+            )
+            summary = f"0 emails (0) + 0 phones (0) + base ({base_cost}) = {base_cost} of {remaining_balance}"
+            return RevealPlan(
+                remaining_balance=remaining_balance,
+                target_contacts=target_contacts,
+                enrich_company=enrich_company,
+                base_cost=base_cost,
+                emails_allowed=0,
+                email_cost=0,
+                phones_allowed=0,
+                phone_cost=0,
+                total_estimated_cost=base_cost,
+                balance_after_run=remaining_balance - base_cost,
+                safety_reserve=safety_reserve,
+                plan_summary=summary,
+                can_proceed=False,
+                notes=notes,
+            )
+
+        # Available pool for reveals while keeping safety reserve
+        available_for_reveals = max(0, remaining_balance - base_cost - safety_reserve)
+
+        emails_allowed = 0
+        email_cost = 0
+        phones_allowed = 0
+        phone_cost = 0
+
+        # 1. Email allocation
+        if enable_email_reveal:
+            max_emails_by_budget = available_for_reveals // 5
+            emails_allowed = min(target_contacts, max_emails_by_budget)
+            email_cost = emails_allowed * 5
+            available_for_reveals -= email_cost
+            if emails_allowed < target_contacts:
+                notes.append(
+                    f"Only {emails_allowed} of {target_contacts} contacts can receive email reveals within safe budget."
+                )
+        else:
+            notes.append("Email reveals disabled by configuration (ENABLE_EMAIL_REVEAL=False).")
+
+        # 2. Phone allocation (Phone reveal ONLY for contacts who already have email, and keeping safety reserve)
+        if enable_phone_reveal:
+            if not enable_email_reveal or emails_allowed == 0:
+                notes.append("Phone reveals skipped: phone reveals are only permitted for contacts who have email.")
+            else:
+                max_phones_by_budget = available_for_reveals // 15
+                phones_allowed = min(emails_allowed, max_phones_by_budget)
+                phone_cost = phones_allowed * 15
+                available_for_reveals -= phone_cost
+                if phones_allowed < emails_allowed:
+                    notes.append(
+                        f"Only {phones_allowed} of {emails_allowed} email-revealed contacts can receive phone reveals within safe reserve."
+                    )
+        else:
+            notes.append("Phone reveals disabled by configuration (ENABLE_PHONE_REVEAL=False).")
+
+        total_estimated_cost = base_cost + email_cost + phone_cost
+        balance_after_run = remaining_balance - total_estimated_cost
+        can_proceed = balance_after_run >= safety_reserve
+
+        phone_word = "phone" if phones_allowed == 1 else "phones"
+        email_word = "email" if emails_allowed == 1 else "emails"
+
+        plan_summary = (
+            f"{emails_allowed} {email_word} ({email_cost}) + "
+            f"{phones_allowed} {phone_word} ({phone_cost}) + "
+            f"base ({base_cost}) = {total_estimated_cost} of {remaining_balance}"
+        )
+
+        return RevealPlan(
+            remaining_balance=remaining_balance,
+            target_contacts=target_contacts,
+            enrich_company=enrich_company,
+            base_cost=base_cost,
+            emails_allowed=emails_allowed,
+            email_cost=email_cost,
+            phones_allowed=phones_allowed,
+            phone_cost=phone_cost,
+            total_estimated_cost=total_estimated_cost,
+            balance_after_run=balance_after_run,
+            safety_reserve=safety_reserve,
+            plan_summary=plan_summary,
+            can_proceed=can_proceed,
+            notes=notes,
+        )
 
     def check_and_deduct(
         self,
