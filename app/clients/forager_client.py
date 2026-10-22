@@ -35,6 +35,7 @@ class ForagerEndpoints:
     PERSON_REVERSE_EMAIL = "/api/{account_id}/datastorage/person_detail_reverse_lookup/by_email/"
     PERSON_REVERSE_PHONE = "/api/{account_id}/datastorage/person_detail_reverse_lookup/by_phone_number/"
     CONTACT_WORK_EMAIL = "/api/{account_id}/datastorage/person_contacts_lookup/work_emails/"
+    CONTACT_PERSONAL_EMAIL = "/api/{account_id}/datastorage/person_contacts_lookup/personal_emails/"
     CONTACT_PHONE = "/api/{account_id}/datastorage/person_contacts_lookup/phone_numbers/"
     CREDITS_BALANCE = "/api/{account_id}/subscription/credits/"
 
@@ -202,6 +203,21 @@ class ForagerClient:
         payload = {"email": email.lower().strip()}
         return self.is_cached(ForagerEndpoints.PERSON_REVERSE_EMAIL, payload)
 
+    def is_work_email_cached(self, linkedin_public_identifier: str) -> bool:
+        """Check if work email lookup for identifier is cached."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return self.is_cached(ForagerEndpoints.CONTACT_WORK_EMAIL, payload)
+
+    def is_personal_email_cached(self, linkedin_public_identifier: str) -> bool:
+        """Check if personal email lookup for identifier is cached."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return self.is_cached(ForagerEndpoints.CONTACT_PERSONAL_EMAIL, payload)
+
+    def is_phone_cached(self, linkedin_public_identifier: str) -> bool:
+        """Check if phone number lookup for identifier is cached."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return self.is_cached(ForagerEndpoints.CONTACT_PHONE, payload)
+
     def _load_mock_file(self, filename: str) -> dict[str, Any]:
         """Load static mock JSON from mocks/ directory."""
         path = os.path.join(self.mocks_dir, filename)
@@ -346,6 +362,36 @@ class ForagerClient:
         if data:
             return data[0]
         return None
+
+    async def lookup_work_email(self, linkedin_public_identifier: str) -> dict[str, Any]:
+        """Reveal verified work email for a contact by LinkedIn public identifier."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return await self._post(
+            ForagerEndpoints.CONTACT_WORK_EMAIL,
+            payload,
+            credit_cost=ForagerCreditCosts.WORK_EMAIL_REVEAL,
+            mock_filename="forager_people_openai.json",
+        )
+
+    async def lookup_personal_email(self, linkedin_public_identifier: str) -> dict[str, Any]:
+        """Reveal personal email for a contact by LinkedIn public identifier."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return await self._post(
+            ForagerEndpoints.CONTACT_PERSONAL_EMAIL,
+            payload,
+            credit_cost=ForagerCreditCosts.WORK_EMAIL_REVEAL,
+            mock_filename="forager_people_openai.json",
+        )
+
+    async def lookup_phone_number(self, linkedin_public_identifier: str) -> dict[str, Any]:
+        """Reveal verified phone number for a contact by LinkedIn public identifier."""
+        payload = {"linkedin_public_identifier": linkedin_public_identifier.strip()}
+        return await self._post(
+            ForagerEndpoints.CONTACT_PHONE,
+            payload,
+            credit_cost=ForagerCreditCosts.PHONE_NUMBER_REVEAL,
+            mock_filename="forager_people_openai.json",
+        )
 
     async def get_credit_balance(self) -> int:
         """Fetch the active credit balance from Forager API (free metadata endpoint).
