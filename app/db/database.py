@@ -49,6 +49,12 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize database tables and ensure directory exists."""
+    s = get_settings()
+    if s.database_url.startswith("sqlite"):
+        fp = s.database_url.replace("sqlite:///", "")
+        dn = os.path.dirname(fp)
+        if dn and not os.path.exists(dn):
+            os.makedirs(dn, exist_ok=True)
     from app.db import models  # noqa: F401
     Base.metadata.create_all(bind=engine)

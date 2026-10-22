@@ -5,6 +5,8 @@
 
 # Databases & SQLite files
 *.db
+*.db-wal
+*.db-shm
 *.db*
 *.sqlite*
 enrichment.db*
