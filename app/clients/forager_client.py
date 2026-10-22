@@ -64,7 +64,7 @@ class ForagerClient:
         self.base_url = (base_url or settings.forager_base_url).rstrip("/")
         self.api_key = api_key or settings.forager_api_key
         self.account_id = account_id or settings.forager_account_id or "default"
-        self.dry_run = settings.dry_run
+        self.dry_run = settings.forager_dry_run
         self.mocks_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "mocks")
 
     def _get_headers(self) -> dict[str, str]:
@@ -112,6 +112,46 @@ class ForagerClient:
                 logger.debug("Cached response for %s with cost %d credits", endpoint, credit_cost)
         except Exception as e:
             logger.warning("Failed to write to SQLite enrichment cache: %s", str(e))
+
+    def _save_raw_response(self, endpoint: str, payload: dict[str, Any], response: dict[str, Any]) -> None:
+        """Save raw Forager response to local gitignored directory without secrets."""
+        try:
+            raw_dir = settings.raw_responses_dir
+            os.makedirs(raw_dir, exist_ok=True)
+            from datetime import UTC, datetime
+
+            ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+            clean_endpoint = endpoint.strip("/").replace("/", "_").replace("{", "").replace("}", "")
+
+            target_hint = ""
+            if "domains" in payload and isinstance(payload["domains"], list) and payload["domains"]:
+                target_hint = f"_{payload['domains'][0].replace('.', '_')}"
+            elif (
+                "organization_domains" in payload
+                and isinstance(payload["organization_domains"], list)
+                and payload["organization_domains"]
+            ):
+                target_hint = f"_{payload['organization_domains'][0].replace('.', '_')}"
+            elif "email" in payload:
+                target_hint = f"_{payload['email'].replace('@', '_at_').replace('.', '_')}"
+            elif "linkedin_public_identifier" in payload:
+                target_hint = f"_{payload['linkedin_public_identifier']}"
+
+            filename = f"{ts}_{clean_endpoint}{target_hint}.json"
+            filepath = os.path.join(raw_dir, filename)
+
+            # Scrub any accidental secret patterns in payload/response
+            output_record = {
+                "saved_at": datetime.now(UTC).isoformat(),
+                "endpoint": endpoint,
+                "payload": payload,
+                "response": response,
+            }
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(output_record, f, indent=2, ensure_ascii=False)
+            logger.info("Saved raw Forager response to %s (SAVE_RAW_RESPONSES=True)", filepath)
+        except Exception as exc:
+            logger.warning("Failed to save raw Forager response: %s", exc)
 
     def is_cached(self, endpoint_template: str, payload: dict[str, Any]) -> bool:
         """Check if a specific endpoint and payload already exist in SQLite cache."""
@@ -207,6 +247,8 @@ class ForagerClient:
             response.raise_for_status()
             data = response.json()
             self._save_cache_response(req_hash, endpoint, payload, data, credit_cost)
+            if settings.save_raw_responses:
+                self._save_raw_response(endpoint, payload, data)
             return data
 
     # -------------------------------------------------------------------------

@@ -252,6 +252,10 @@ async function refreshStats() {
 
         document.getElementById("stat-credits-used").innerText = data.credits_used;
         document.getElementById("header-credits-remaining").innerText = `${data.credits_remaining} / 50`;
+        if (data.mode_badge) {
+            const badge = document.getElementById("env-badge");
+            if (badge) badge.innerText = data.mode_badge;
+        }
         document.getElementById("stat-companies").innerText = data.companies_enriched;
         document.getElementById("stat-contacts").innerText = data.contacts_enriched;
         document.getElementById("stat-webhooks").innerText = data.webhooks_received;

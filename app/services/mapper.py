@@ -8,7 +8,12 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
+from app.config import get_settings
+from app.logging_config import setup_logging
 from app.models.schemas import NormalizedCompanyData, NormalizedContactData
+
+settings = get_settings()
+logger = setup_logging(settings.log_level)
 
 
 def _clean_str(val: Any) -> str | None:
@@ -89,11 +94,48 @@ class DataMapper:
     @staticmethod
     def forager_to_normalized_company(raw: dict[str, Any]) -> NormalizedCompanyData:
         """Parse raw Forager organization dictionary into NormalizedCompanyData."""
-        loc = raw.get("location") or {}
+        if not isinstance(raw, dict):
+            logger.warning("forager_to_normalized_company received non-dict payload: %s", type(raw))
+            raw = {}
+
+        # Log defensive warning for missing expected company fields
+        expected_fields = [
+            "name",
+            "domain",
+            "description",
+            "headcount",
+            "estimated_annual_revenue",
+            "industry",
+            "linkedin_url",
+            "location",
+            "founded_year",
+        ]
+        missing = []
+        for f in expected_fields:
+            if f == "headcount" and not (raw.get("headcount") or raw.get("employees_range")):
+                missing.append("headcount")
+            elif f == "estimated_annual_revenue" and not (
+                raw.get("estimated_annual_revenue") or raw.get("revenue_range")
+            ):
+                missing.append("estimated_annual_revenue")
+            elif f == "description" and not (raw.get("description") or raw.get("short_description")):
+                missing.append("description")
+            elif f not in ("headcount", "estimated_annual_revenue", "description") and not raw.get(f):
+                missing.append(f)
+
+        if missing:
+            company_id = raw.get("domain") or raw.get("name") or "unknown_company"
+            logger.warning(
+                "Forager company response for '%s' is missing expected fields: %s",
+                company_id,
+                ", ".join(missing),
+            )
+
+        loc = raw.get("location") if isinstance(raw.get("location"), dict) else {}
         tech_list = raw.get("technologies") or []
         tech_str = ", ".join(tech_list[:25]) if isinstance(tech_list, list) else _clean_str(tech_list)
 
-        funding = raw.get("funding") or {}
+        funding = raw.get("funding") if isinstance(raw.get("funding"), dict) else {}
         total_funding = funding.get("total_funding_usd") or raw.get("total_funding")
         funding_str = f"${int(total_funding):,}" if isinstance(total_funding, (int, float)) else _clean_str(total_funding)
 
@@ -127,8 +169,49 @@ class DataMapper:
     @staticmethod
     def forager_to_normalized_contact(raw: dict[str, Any]) -> NormalizedContactData:
         """Parse raw Forager person dictionary into NormalizedContactData."""
-        org = raw.get("organization") or {}
-        loc = raw.get("location") or {}
+        if not isinstance(raw, dict):
+            logger.warning("forager_to_normalized_contact received non-dict payload: %s", type(raw))
+            raw = {}
+
+        # Log defensive warning for missing expected contact fields
+        expected_contact_fields = [
+            "first_name",
+            "last_name",
+            "role_title",
+            "email",
+            "phone",
+            "location",
+            "linkedin_url",
+            "organization",
+        ]
+        missing_contact = []
+        if not raw.get("first_name"):
+            missing_contact.append("first_name")
+        if not raw.get("last_name"):
+            missing_contact.append("last_name")
+        if not (raw.get("role_title") or raw.get("title") or raw.get("normalized_title")):
+            missing_contact.append("role_title")
+        if not (raw.get("email") or raw.get("emails")):
+            missing_contact.append("email")
+        if not (raw.get("phone") or raw.get("phones")):
+            missing_contact.append("phone")
+        if not (raw.get("linkedin_url") or raw.get("linkedin_public_identifier")):
+            missing_contact.append("linkedin_url")
+        if not raw.get("location"):
+            missing_contact.append("location")
+        if not raw.get("organization"):
+            missing_contact.append("organization")
+
+        if missing_contact:
+            candidate_name = f"{raw.get('first_name', '')} {raw.get('last_name', '')}".strip() or "unnamed_candidate"
+            logger.warning(
+                "Forager contact response for candidate '%s' is missing expected fields: %s",
+                candidate_name,
+                ", ".join(missing_contact),
+            )
+
+        org = raw.get("organization") if isinstance(raw.get("organization"), dict) else {}
+        loc = raw.get("location") if isinstance(raw.get("location"), dict) else {}
         skills = raw.get("skills") or []
         skills_str = ", ".join(skills[:20]) if isinstance(skills, list) else _clean_str(skills)
 

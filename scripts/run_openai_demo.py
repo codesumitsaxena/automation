@@ -26,7 +26,7 @@ def print_banner():
     print("       FORAGER x HUBSPOT ENRICHMENT - PRIMARY DEMO DELIVERABLE")
     print("             Role: AI Automation Engineer (ONEGTM LAB)")
     print("=" * 80)
-    print(f"Operational Mode: {'[DRY_RUN: Mock Data (0 Credits)]' if settings.dry_run else '[LIVE: Real API Calls]'}")
+    print(f"Operational Mode: [{settings.mode_badge}]")
     print("Target Company  : OpenAI (openai.com)")
     print(f"Target Roles    : {', '.join(settings.title_filters_list[:5])}")
     print("Contact Limit   : 5 Contacts\n")
@@ -56,7 +56,7 @@ async def main():
     for note in plan.notes:
         print(f"      - {note}")
 
-    if not settings.dry_run:
+    if not settings.forager_dry_run:
         if not plan.can_proceed:
             print("\n[ABORTED] Cannot proceed: Insufficient balance to maintain the 3-credit safety reserve.")
             return
@@ -76,7 +76,8 @@ async def main():
                 print("[ABORTED] Run cancelled.")
                 return
     else:
-        print("      Operational Mode        : DRY_RUN=True (0 real credits consumed)\n")
+        hubspot_status = "REAL CRM Calls" if not settings.hubspot_dry_run else "MOCK CRM"
+        print(f"      Operational Mode        : FORAGER: MOCK (0 credits) | HUBSPOT: {hubspot_status}\n")
 
     # 2. Run Full Orchestration
     print("[2/3] Executing Enrichment & Discovery Pipeline...")

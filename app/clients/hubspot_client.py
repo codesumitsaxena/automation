@@ -31,7 +31,19 @@ class HubSpotClient:
 
     def __init__(self, access_token: str | None = None):
         self.access_token = access_token or settings.hubspot_access_token
-        self.is_live = settings.is_configured_for_live_hubspot()
+        # Respect HUBSPOT_DRY_RUN: Only go live if hubspot_dry_run is False and token is configured
+        if not settings.hubspot_dry_run:
+            if settings.is_configured_for_live_hubspot():
+                self.is_live = True
+                logger.info("[HUBSPOT LIVE] Real HubSpot CRM connection active.")
+            else:
+                logger.warning(
+                    "HUBSPOT_DRY_RUN is False, but HUBSPOT_ACCESS_TOKEN is not configured! "
+                    "Falling back to mock HubSpot mode."
+                )
+                self.is_live = False
+        else:
+            self.is_live = False
         self._simulated_counter = 1000
         # In-memory registry for DRY_RUN only (preserves state across demo re-runs)
         self._simulated_contacts: dict[str, dict[str, Any]] = {}

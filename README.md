@@ -2,7 +2,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/Framework-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-26%2F26%20Passing-brightgreen.svg)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-brightgreen.svg)](https://pytest.org/)
 [![Railway Ready](https://img.shields.io/badge/Deploy-Railway-blueviolet.svg)](https://railway.app/)
 
 A production-grade, custom Python backend automation connecting **Forager.ai** (B2B prospecting and firmographic data) with **HubSpot CRM**, end-to-end. Built as the engineering hiring evaluation task for **ONEGTM LAB** (AI Automation Engineer).
@@ -62,7 +62,7 @@ forager-hubspot-enrichment/
 │   ├── setup_hubspot_properties.py # Provisions custom CRM fields in HubSpot
 │   ├── run_openai_demo.py       # Primary OpenAI evaluation demo script
 │   └── webhook_setup_guide.md   # Step-by-step webhook configuration guide
-├── tests/                       # Complete Pytest test suite (26/26 passing)
+├── tests/                       # Complete Pytest test suite (30/30 passing)
 ├── docs/
 │   ├── TASK_CONTEXT.md          # Evaluation task rubric & constraints
 │   ├── ARCHITECTURE.md          # Flow diagrams & sequence charts
@@ -120,7 +120,12 @@ cp .env.example .env
 ```
 
 > [!NOTE]
-> By default, `DRY_RUN=true` is enabled in `.env`. You can run the entire system, execute all 10 tests, run the OpenAI demo, and view the web dashboard without needing real API keys or spending any credits!
+> **Operational Flags & Mocks vs. Live CRM**:
+> * `DRY_RUN=true`: Master toggle. Both Forager and HubSpot default to offline mock mode (0 credits, simulated CRM).
+> * **Granular Separation (`FORAGER_DRY_RUN` & `HUBSPOT_DRY_RUN`)**:
+>   * Set `FORAGER_DRY_RUN=true` and `HUBSPOT_DRY_RUN=false` to use high-fidelity Forager mock data (**0 credits spent**) while making **REAL calls to HubSpot CRM** (creating/updating company & contacts, associations, and deduplication search).
+>   * The web dashboard badge and terminal banner will display: `FORAGER: MOCK | HUBSPOT: LIVE`.
+> * `SAVE_RAW_RESPONSES=true`: Saves every real Forager API response into a local `raw_responses/` folder (strictly gitignored) for inspecting payload structures and refining mapper logic.
 
 ---
 
@@ -308,7 +313,7 @@ Before executing live queries, understand the exact credit costs defined by Fora
 - [ ] Verify SQLite database file `enrichment.db` has read/write permissions.
 - [ ] Run `python -m pip_audit` and verify: `No known vulnerabilities found`.
 - [ ] Run `python -m bandit -r app scripts` and verify: `No issues identified`.
-- [ ] Run `pytest -v` and verify: **26/26 passed**.
+- [ ] Run `pytest -v` and verify: **30/30 passed**.
 
 #### Phase 2: Smoke Test Variants (Single Company + Single Person)
 
@@ -394,6 +399,37 @@ The repository is pre-configured with a `Procfile` and `railway.json` for zero-c
 5. Railway will automatically build and deploy the service.
 6. Verify your deployment by visiting `https://your-app-name.up.railway.app/health`.
 
+### Railway Notes (Persistent SQLite Storage & Safe Webhook Budgets)
+
+When running on [Railway](https://railway.app/), follow these two essential operational practices:
+
+#### 1. Mount a Persistent Volume for SQLite Database
+Railway containers operate on an **ephemeral filesystem** by default. Any redeployment, git push, or container restart completely wipes the local container filesystem. Without a persistent volume:
+* **Permanent Request Cache is Lost**: Previously enriched companies and contacts would be queried against Forager again on the next run, causing you to **pay real credits multiple times** for the exact same data!
+* **Credit Ledger & Deduplication History Lost**: The audit table, cumulative usage records, and webhook deduplication records (`eventId`) would reset to zero.
+
+**Step-by-Step Volume Mount in Railway:**
+1. In your Railway service dashboard, navigate to the **Volumes** tab.
+2. Click **+ Add Volume** (or **New Volume**).
+3. Set the Mount Path to:
+   ```text
+   /data
+   ```
+4. In the service's **Variables** tab, set:
+   ```env
+   DATABASE_URL=sqlite:////data/enrichment.db
+   ```
+   *(Note: The four leading slashes `sqlite:////data/...` designate an absolute Unix directory path in SQLite).*
+
+#### 2. Recommended Safety Limit: `MAX_CREDITS_PER_RUN=8` for Webhook Testing
+When connecting public webhooks (`company.creation` and `contact.creation`) to Railway:
+* HubSpot can trigger creation events rapidly or in batches (e.g. during CRM CSV imports or multi-lead generation).
+* To protect the strict 50-credit trial budget against unexpected runaway loops or bulk creation spikes, configure:
+   ```env
+   MAX_CREDITS_PER_RUN=8
+   ```
+* **Why 8 credits?** A single company enrichment + 5 contact discovery run consumes exactly **7 credits** (1 company + 1 search + 5 contacts). An 8-credit ceiling guarantees that single webhook runs complete cleanly while preventing multi-record cascades from draining credits.
+
 ---
 
 ## Video Demo Recording Checklist
@@ -401,7 +437,7 @@ The repository is pre-configured with a `Procfile` and `railway.json` for zero-c
 Follow this checklist when recording your evaluation walkthrough video:
 
 1. **Terminal Overview & Tests (1 min)**:
-   * Show `pytest -v` passing all 26 tests cleanly.
+   * Show `pytest -v` passing all 30 tests cleanly.
    * Briefly explain the modular architecture: `clients/`, `services/`, `webhooks/`, `mapper.py`.
 2. **OpenAI Demo Deliverable (1.5 mins)**:
    * Run `python scripts/run_openai_demo.py` in the terminal.

@@ -41,7 +41,7 @@ class CreditGuard:
 
     def __init__(self, max_credits_per_run: int | None = None):
         self.max_credits_per_run = max_credits_per_run or settings.max_credits_per_run
-        self.dry_run = settings.dry_run
+        self.dry_run = settings.forager_dry_run
 
     @staticmethod
     def estimate_run_cost(
@@ -80,8 +80,8 @@ class CreditGuard:
         return {
             "estimated_total_credits": total,
             "cost_breakdown": breakdown,
-            "dry_run": settings.dry_run,
-            "real_cost_if_dry_run": 0 if settings.dry_run else total,
+            "dry_run": settings.forager_dry_run,
+            "real_cost_if_dry_run": 0 if settings.forager_dry_run else total,
         }
 
     @staticmethod

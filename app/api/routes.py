@@ -276,6 +276,9 @@ async def get_dashboard_stats(
 
     return {
         "dry_run": settings.dry_run,
+        "forager_dry_run": settings.forager_dry_run,
+        "hubspot_dry_run": settings.hubspot_dry_run,
+        "mode_badge": settings.mode_badge,
         "credits_remaining": credit_info["credits_remaining"],
         "credits_used": credit_info["total_real_credits_used"],
         "companies_enriched": companies_count,

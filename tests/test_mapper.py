@@ -116,3 +116,23 @@ def test_mapper_revenue_range_parsing_and_custom_property():
     assert props_c["annualrevenue"] == "3400000000"
     assert props_c["forager_revenue_range"] == "$1B to $5B"
 
+
+def test_mapper_defensive_missing_fields_warning(caplog):
+    """Verify that DataMapper handles real data gaps without crashing and logs warnings."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        # 1. Company with missing fields or non-dict
+        empty_comp = DataMapper.forager_to_normalized_company({})
+        assert empty_comp.name is None
+        assert empty_comp.domain == ""
+        assert any("is missing expected fields" in rec.message for rec in caplog.records)
+
+        # 2. Contact with missing fields
+        caplog.clear()
+        empty_contact = DataMapper.forager_to_normalized_contact({})
+        assert empty_contact.firstname is None
+        assert empty_contact.email is None
+        assert any("is missing expected fields" in rec.message for rec in caplog.records)
+
+

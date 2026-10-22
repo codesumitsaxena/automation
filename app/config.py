@@ -6,7 +6,7 @@ fallbacks, and helper properties.
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,7 +53,23 @@ class Settings(BaseSettings):
     # Guardrails & Operational Flags
     dry_run: bool = Field(
         default=True,
-        description="When True, uses mock JSON data and makes 0 real paid API calls",
+        description="Master dry run flag. When True, both Forager and HubSpot default to mock mode",
+    )
+    forager_dry_run: bool | None = Field(
+        default=None,
+        description="Explicit toggle for Forager mock mode. Defaults to value of DRY_RUN if None",
+    )
+    hubspot_dry_run: bool | None = Field(
+        default=None,
+        description="Explicit toggle for HubSpot mock mode. Defaults to value of DRY_RUN if None",
+    )
+    save_raw_responses: bool = Field(
+        default=False,
+        description="When True, saves every real Forager API response into raw_responses/ directory",
+    )
+    raw_responses_dir: str = Field(
+        default="raw_responses",
+        description="Directory path for saving raw API responses",
     )
     max_credits_per_run: int = Field(
         default=30,
@@ -110,6 +126,22 @@ class Settings(BaseSettings):
     def enable_email_phone_reveal(self) -> bool:
         """Backwards compatibility for legacy combined reveal flag."""
         return self.enable_email_reveal or self.enable_phone_reveal
+
+    @model_validator(mode="after")
+    def resolve_dry_runs(self) -> "Settings":
+        """Resolve split dry run flags from master dry_run toggle if not explicitly provided."""
+        if self.forager_dry_run is None:
+            self.forager_dry_run = self.dry_run
+        if self.hubspot_dry_run is None:
+            self.hubspot_dry_run = self.dry_run
+        return self
+
+    @property
+    def mode_badge(self) -> str:
+        """Formatted environment badge string for console and dashboard."""
+        f_mode = "MOCK" if self.forager_dry_run else "LIVE"
+        h_mode = "MOCK" if self.hubspot_dry_run else "LIVE"
+        return f"FORAGER: {f_mode} | HUBSPOT: {h_mode}"
 
 
 @lru_cache
