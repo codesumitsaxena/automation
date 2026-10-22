@@ -37,7 +37,7 @@ class ForagerEndpoints:
     CONTACT_WORK_EMAIL = "/api/{account_id}/datastorage/person_contacts_lookup/work_emails/"
     CONTACT_PERSONAL_EMAIL = "/api/{account_id}/datastorage/person_contacts_lookup/personal_emails/"
     CONTACT_PHONE = "/api/{account_id}/datastorage/person_contacts_lookup/phone_numbers/"
-    CREDITS_BALANCE = "/api/{account_id}/subscription/credits/"
+    CREDITS_BALANCE = "/api/{account_id}/subscriptions/balance_change_logs/"
 
 
 class ForagerCreditCosts:
@@ -413,6 +413,10 @@ class ForagerClient:
                 if response.status_code == 200:
                     payload = response.json()
                     if isinstance(payload, dict):
+                        if "results" in payload and isinstance(payload["results"], list):
+                            total = sum(float(item.get("change_sum", 0)) for item in payload["results"])
+                            logger.info("Live Forager API balance_change_logs calculated balance: %d credits", int(total))
+                            return int(total)
                         balance = (
                             payload.get("credits_remaining")
                             or payload.get("balance")
