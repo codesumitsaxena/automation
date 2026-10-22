@@ -82,6 +82,8 @@ class HubSpotClient:
             )
             if response.status_code == 404:
                 return {}
+            if response.is_error:
+                logger.error("HubSpot API error %s on %s %s: %s", response.status_code, method, path, response.text)
             response.raise_for_status()
             if response.status_code == 204:
                 return {}

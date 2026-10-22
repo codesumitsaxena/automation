@@ -260,9 +260,75 @@ class DataMapper:
             raw_forager_data=raw,
         )
 
+    HUBSPOT_ALLOWED_INDUSTRIES = {
+        "ACCOUNTING", "AIRLINES_AVIATION", "ALTERNATIVE_DISPUTE_RESOLUTION", "ALTERNATIVE_MEDICINE",
+        "ANIMATION", "APPAREL_FASHION", "ARCHITECTURE_PLANNING", "ARTS_AND_CRAFTS", "AUTOMOTIVE",
+        "AVIATION_AEROSPACE", "BANKING", "BIOTECHNOLOGY", "BROADCAST_MEDIA", "BUILDING_MATERIALS",
+        "BUSINESS_SUPPLIES_AND_EQUIPMENT", "CAPITAL_MARKETS", "CHEMICALS", "CIVIC_SOCIAL_ORGANIZATION",
+        "CIVIL_ENGINEERING", "COMMERCIAL_REAL_ESTATE", "COMPUTER_NETWORK_SECURITY", "COMPUTER_GAMES",
+        "COMPUTER_HARDWARE", "COMPUTER_NETWORKING", "COMPUTER_SOFTWARE", "INTERNET", "CONSTRUCTION",
+        "CONSUMER_ELECTRONICS", "CONSUMER_GOODS", "CONSUMER_SERVICES", "COSMETICS", "DAIRY",
+        "DEFENSE_SPACE", "DESIGN", "EDUCATION_MANAGEMENT", "E_LEARNING",
+        "ELECTRICAL_ELECTRONIC_MANUFACTURING", "ENTERTAINMENT", "ENVIRONMENTAL_SERVICES",
+        "EVENTS_SERVICES", "EXECUTIVE_OFFICE", "FACILITIES_SERVICES", "FARMING", "FINANCIAL_SERVICES",
+        "FINE_ART", "FISHERY", "FOOD_BEVERAGES", "FOOD_PRODUCTION", "FUND_RAISING", "FURNITURE",
+        "GAMBLING_CASINOS", "GLASS_CERAMICS_CONCRETE", "GOVERNMENT_ADMINISTRATION",
+        "GOVERNMENT_RELATIONS", "GRAPHIC_DESIGN", "HEALTH_WELLNESS_AND_FITNESS", "HIGHER_EDUCATION",
+        "HOSPITAL_HEALTH_CARE", "HOSPITALITY", "HUMAN_RESOURCES", "IMPORT_AND_EXPORT",
+        "INDIVIDUAL_FAMILY_SERVICES", "INDUSTRIAL_AUTOMATION", "INFORMATION_SERVICES",
+        "INFORMATION_TECHNOLOGY_AND_SERVICES", "INSURANCE", "INTERNATIONAL_AFFAIRS",
+        "INTERNATIONAL_TRADE_AND_DEVELOPMENT", "INVESTMENT_BANKING", "INVESTMENT_MANAGEMENT",
+        "JUDICIARY", "LAW_ENFORCEMENT", "LAW_PRACTICE", "LEGAL_SERVICES", "LEGISLATIVE_OFFICE",
+        "LEISURE_TRAVEL_TOURISM", "LIBRARIES", "LOGISTICS_AND_SUPPLY_CHAIN", "LUXURY_GOODS_JEWELRY",
+        "MACHINERY", "MANAGEMENT_CONSULTING", "MARITIME", "MARKET_RESEARCH",
+        "MARKETING_AND_ADVERTISING", "MECHANICAL_OR_INDUSTRIAL_ENGINEERING", "MEDIA_PRODUCTION",
+        "MEDICAL_DEVICES", "MEDICAL_PRACTICE", "MENTAL_HEALTH_CARE", "MILITARY", "MINING_METALS",
+        "MOTION_PICTURES_AND_FILM", "MUSEUMS_AND_INSTITUTIONS", "MUSIC", "NANOTECHNOLOGY", "NEWSPAPERS",
+        "NON_PROFIT_ORGANIZATION_MANAGEMENT", "OIL_ENERGY", "ONLINE_MEDIA", "OUTSOURCING_OFFSHORING",
+        "PACKAGE_FREIGHT_DELIVERY", "PACKAGING_AND_CONTAINERS", "PAPER_FOREST_PRODUCTS",
+        "PERFORMING_ARTS", "PHARMACEUTICALS", "PHILANTHROPY", "PHOTOGRAPHY", "PLASTICS",
+        "POLITICAL_ORGANIZATION", "PRIMARY_SECONDARY_EDUCATION", "PRINTING",
+        "PROFESSIONAL_TRAINING_COACHING", "PROGRAM_DEVELOPMENT", "PUBLIC_POLICY",
+        "PUBLIC_RELATIONS_AND_COMMUNICATIONS", "PUBLIC_SAFETY", "PUBLISHING", "RAILROAD_MANUFACTURE",
+        "RANCHING", "REAL_ESTATE", "RECREATIONAL_FACILITIES_AND_SERVICES", "RELIGIOUS_INSTITUTIONS",
+        "RENEWABLES_ENVIRONMENT", "RESEARCH", "RESTAURANTS", "RETAIL", "SECURITY_AND_INVESTIGATIONS",
+        "SEMICONDUCTORS", "SHIPBUILDING", "SPORTING_GOODS", "SPORTS", "STAFFING_AND_RECRUITING",
+        "SUPERMARKETS", "TELECOMMUNICATIONS", "TEXTILES", "THINK_TANKS", "TOBACCO",
+        "TRANSLATION_AND_LOCALIZATION", "TRANSPORTATION_TRUCKING_RAILROAD", "UTILITIES",
+        "VENTURE_CAPITAL_PRIVATE_EQUITY", "VETERINARY", "WAREHOUSING", "WHOLESALE", "WINE_AND_SPIRITS",
+        "WIRELESS", "WRITING_AND_EDITING", "MOBILE_GAMES"
+    }
+
+    @classmethod
+    def normalize_hubspot_industry(cls, raw_industry: str | None) -> str | None:
+        """Map raw industry string to a valid HubSpot enumeration option or None."""
+        if not raw_industry:
+            return None
+        candidate = raw_industry.strip().upper().replace(" ", "_").replace("-", "_")
+        if candidate in cls.HUBSPOT_ALLOWED_INDUSTRIES:
+            return candidate
+
+        # Common tech / AI synonyms
+        if any(term in candidate for term in ("ARTIFICIAL_INTELLIGENCE", "AI", "MACHINE_LEARNING", "SOFTWARE", "SAAS")):
+            return "COMPUTER_SOFTWARE"
+        if any(term in candidate for term in ("INTERNET", "WEB", "ONLINE")):
+            return "INTERNET"
+        if any(term in candidate for term in ("TECH", "INFORMATION_TECHNOLOGY", "IT")):
+            return "INFORMATION_TECHNOLOGY_AND_SERVICES"
+        if "FINTECH" in candidate or "FINANCE" in candidate:
+            return "FINANCIAL_SERVICES"
+        if "EDTECH" in candidate or "EDUCATION" in candidate:
+            return "E_LEARNING"
+        if "BIOTECH" in candidate:
+            return "BIOTECHNOLOGY"
+
+        logger.debug("Raw industry '%s' does not match HubSpot allowed options; omitting to prevent 400 rejection.", raw_industry)
+        return None
+
     @classmethod
     def company_to_hubspot_properties(cls, company: NormalizedCompanyData) -> dict[str, Any]:
         """Convert NormalizedCompanyData to HubSpot property payload (non-destructive)."""
+        normalized_industry = cls.normalize_hubspot_industry(company.industry)
         prop_map = {
             "name": company.name,
             "domain": company.domain,
@@ -271,7 +337,7 @@ class DataMapper:
             "numberofemployees": company.numberofemployees,
             "annualrevenue": company.annualrevenue,
             "forager_revenue_range": company.forager_revenue_range,
-            "industry": company.industry,
+            "industry": normalized_industry,
             "linkedin_company_page": company.linkedin_company_page,
             "phone": company.phone,
             "city": company.city,
