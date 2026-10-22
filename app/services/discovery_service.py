@@ -205,7 +205,7 @@ class DiscoveryService:
         # 4. Create and associate in HubSpot if requested
         if add_to_hubspot:
             for contact in filtered_contacts:
-                await self._persist_and_associate_contact(
+                contact.hubspot_id = await self._persist_and_associate_contact(
                     contact=contact,
                     hubspot_company_id=hubspot_company_id,
                 )
@@ -219,8 +219,8 @@ class DiscoveryService:
     ) -> str | None:
         """Create or update contact in HubSpot and associate with target company."""
         props = DataMapper.contact_to_hubspot_properties(contact)
-        # Prevent contact-creation webhook loop: mark status as discovered
-        props["forager_status"] = "discovered"
+        # Mark as mock_demo in mock runs, or discovered in live runs to prevent webhook loop
+        props["forager_status"] = "mock_demo" if self.forager.dry_run else "discovered"
 
         contact_id = None
         email = contact.email

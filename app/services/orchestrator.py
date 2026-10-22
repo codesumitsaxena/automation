@@ -131,12 +131,12 @@ class OrchestrationService:
         # Infinite Loop Prevention:
         # If this contact was created by our own discovery step, its status is 'discovered'.
         # We mark it processed and exit to prevent looping.
-        if status == "discovered":
-            logger.info("Contact %s was created by discovery step. Skipping webhook to prevent loop.", contact_id)
+        if status in ("discovered", "mock_demo"):
+            logger.info("Contact %s was created by discovery/mock step. Skipping webhook to prevent loop.", contact_id)
             return {
                 "success": True,
                 "status": "LOOP_PREVENTED",
-                "message": "Contact created by automated discovery; webhook loop avoided",
+                "message": "Contact created by automated discovery/mock; webhook loop avoided",
             }
 
         # Otherwise, enrich contact
@@ -190,6 +190,7 @@ class OrchestrationService:
                 "company_domain": p.company_domain or domain,
                 "linkedin_url": p.person_linkedin_url,
                 "headline": p.forager_headline,
+                "hubspot_id": p.hubspot_id,
             }
             for p in discovered_people
         ]

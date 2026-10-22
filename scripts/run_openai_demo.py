@@ -117,6 +117,8 @@ async def main():
         print(f"    Location    : {c.get('location') or 'N/A'}")
         print(f"    Company     : {c_domain}")
         print(f"    LinkedIn URL: {c.get('linkedin_url') or 'N/A'}")
+        if c.get('hubspot_id'):
+            print(f"    HubSpot ID  : {c.get('hubspot_id')}")
         print("-" * 95)
 
     missing_phones = sum(1 for c in contacts if not c.get("phone") or c.get("phone") == "N/A")

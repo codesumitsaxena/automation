@@ -30,10 +30,11 @@ class HubSpotClient:
     BASE_URL = "https://api.hubapi.com"
 
     def __init__(self, access_token: str | None = None):
-        self.access_token = access_token or settings.hubspot_access_token
+        s = get_settings()
+        self.access_token = access_token or s.hubspot_access_token
         # Respect HUBSPOT_DRY_RUN: Only go live if hubspot_dry_run is False and token is configured
-        if not settings.hubspot_dry_run:
-            if settings.is_configured_for_live_hubspot():
+        if not s.hubspot_dry_run:
+            if s.is_configured_for_live_hubspot():
                 self.is_live = True
                 logger.info("[HUBSPOT LIVE] Real HubSpot CRM connection active.")
             else:
@@ -298,6 +299,82 @@ class HubSpotClient:
 
         body = {"properties": properties}
         return await self._request("PATCH", f"/crm/v3/objects/contacts/{contact_id}", json_body=body)
+
+    async def delete_contact(self, contact_id: str) -> bool:
+        """Delete a contact record from HubSpot."""
+        if not self.is_live:
+            self._simulated_contacts.pop(contact_id, None)
+            logger.info("[MOCK HUBSPOT] Deleted contact %s", contact_id)
+            return True
+        await self._request("DELETE", f"/crm/v3/objects/contacts/{contact_id}")
+        logger.info("[HUBSPOT LIVE] Deleted contact %s", contact_id)
+        return True
+
+    async def delete_company(self, company_id: str) -> bool:
+        """Delete a company record from HubSpot."""
+        if not self.is_live:
+            self._simulated_companies.pop(company_id, None)
+            logger.info("[MOCK HUBSPOT] Deleted company %s", company_id)
+            return True
+        await self._request("DELETE", f"/crm/v3/objects/companies/{company_id}")
+        logger.info("[HUBSPOT LIVE] Deleted company %s", company_id)
+        return True
+
+    async def search_companies_by_property(
+        self, property_name: str, value: str, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Search for companies matching a specific property value."""
+        if not self.is_live:
+            return [
+                rec
+                for rec in self._simulated_companies.values()
+                if rec.get("properties", {}).get(property_name) == value
+            ]
+        body = {
+            "filterGroups": [
+                {
+                    "filters": [
+                        {
+                            "propertyName": property_name,
+                            "operator": "EQ",
+                            "value": value,
+                        }
+                    ]
+                }
+            ],
+            "properties": ["name", "domain", property_name],
+            "limit": limit,
+        }
+        res = await self._request("POST", "/crm/v3/objects/companies/search", json_body=body)
+        return res.get("results", [])
+
+    async def search_contacts_by_property(
+        self, property_name: str, value: str, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Search for contacts matching a specific property value."""
+        if not self.is_live:
+            return [
+                rec
+                for rec in self._simulated_contacts.values()
+                if rec.get("properties", {}).get(property_name) == value
+            ]
+        body = {
+            "filterGroups": [
+                {
+                    "filters": [
+                        {
+                            "propertyName": property_name,
+                            "operator": "EQ",
+                            "value": value,
+                        }
+                    ]
+                }
+            ],
+            "properties": ["firstname", "lastname", "email", "jobtitle", property_name],
+            "limit": limit,
+        }
+        res = await self._request("POST", "/crm/v3/objects/contacts/search", json_body=body)
+        return res.get("results", [])
 
 
     # -------------------------------------------------------------------------

@@ -140,6 +140,7 @@ class NormalizedContactData(BaseModel):
     city: str | None = None
     state: str | None = None
     country: str | None = None
+    hubspot_id: str | None = None
     company: str | None = None
     company_domain: str | None = None
     company_linkedin_url: str | None = None

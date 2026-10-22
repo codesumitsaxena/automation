@@ -14,35 +14,39 @@ def test_split_dry_run_flags_forager_mock_hubspot_live(monkeypatch):
 
     Forager to use mocks and HubSpot to use live CRM calls.
     """
-    monkeypatch.setattr(settings, "forager_dry_run", True)
-    monkeypatch.setattr(settings, "hubspot_dry_run", False)
-    monkeypatch.setattr(settings, "hubspot_access_token", "pat-na1-test-token-12345")
+    s = get_settings()
+    monkeypatch.setattr(s, "forager_dry_run", True)
+    monkeypatch.setattr(s, "hubspot_dry_run", False)
+    monkeypatch.setattr(s, "hubspot_access_token", "pat-na1-test-token-12345")
 
     forager = ForagerClient()
     hubspot = HubSpotClient()
 
     assert forager.dry_run is True
     assert hubspot.is_live is True
-    assert settings.mode_badge == "FORAGER: MOCK | HUBSPOT: LIVE"
+    assert s.mode_badge == "FORAGER: MOCK | HUBSPOT: LIVE"
 
 
 def test_split_dry_run_flags_both_mock(monkeypatch):
     """Verify that when both dry run flags are True, both clients run in mock mode."""
-    monkeypatch.setattr(settings, "forager_dry_run", True)
-    monkeypatch.setattr(settings, "hubspot_dry_run", True)
+    s = get_settings()
+    monkeypatch.setattr(s, "forager_dry_run", True)
+    monkeypatch.setattr(s, "hubspot_dry_run", True)
 
     forager = ForagerClient()
     hubspot = HubSpotClient()
 
     assert forager.dry_run is True
     assert hubspot.is_live is False
-    assert settings.mode_badge == "FORAGER: MOCK | HUBSPOT: MOCK"
+    assert s.mode_badge == "FORAGER: MOCK | HUBSPOT: MOCK"
 
 
 def test_save_raw_responses_creates_file(monkeypatch, tmp_path):
     """Verify that SAVE_RAW_RESPONSES=True persists sanitized response files."""
+    s = get_settings()
     test_raw_dir = str(tmp_path / "raw_responses")
-    monkeypatch.setattr(settings, "save_raw_responses", True)
+    monkeypatch.setattr(s, "save_raw_responses", True)
+    monkeypatch.setattr(s, "raw_responses_dir", test_raw_dir)
     monkeypatch.setattr(settings, "raw_responses_dir", test_raw_dir)
 
     forager = ForagerClient()

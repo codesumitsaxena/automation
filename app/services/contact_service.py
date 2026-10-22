@@ -160,7 +160,7 @@ class ContactService:
         # 4. Normalize and Map to HubSpot properties
         normalized_contact = DataMapper.forager_to_normalized_contact(raw_person)
         hubspot_props = DataMapper.contact_to_hubspot_properties(normalized_contact)
-        hubspot_props["forager_status"] = "enriched"
+        hubspot_props["forager_status"] = "mock_demo" if self.forager.dry_run else "enriched"
 
         # 5. Persist to HubSpot (Create or Update non-destructively)
         if target_contact_id:

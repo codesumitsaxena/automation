@@ -62,10 +62,11 @@ class ForagerClient:
     """Production client for Forager.ai B2B prospecting and enrichment API."""
 
     def __init__(self, base_url: str | None = None, api_key: str | None = None, account_id: str | None = None):
-        self.base_url = (base_url or settings.forager_base_url).rstrip("/")
-        self.api_key = api_key or settings.forager_api_key
-        self.account_id = account_id or settings.forager_account_id or "default"
-        self.dry_run = settings.forager_dry_run
+        s = get_settings()
+        self.base_url = (base_url or s.forager_base_url).rstrip("/")
+        self.api_key = api_key or s.forager_api_key
+        self.account_id = account_id or s.forager_account_id or "default"
+        self.dry_run = s.forager_dry_run
         self.mocks_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "mocks")
 
     def _get_headers(self) -> dict[str, str]:

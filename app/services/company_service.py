@@ -99,6 +99,8 @@ class CompanyService:
         # 4. Normalize and Map to HubSpot properties
         normalized_data = DataMapper.forager_to_normalized_company(raw_company)
         hubspot_props = DataMapper.company_to_hubspot_properties(normalized_data)
+        if self.forager.dry_run:
+            hubspot_props["forager_status"] = "mock_demo"
 
         # 5. Persist to HubSpot (Create or Update non-destructively)
         if target_company_id:
