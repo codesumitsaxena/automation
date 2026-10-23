@@ -100,9 +100,9 @@ async def render_dashboard(request: Request, user: str = Depends(authenticate_ap
         wh_count = db.query(WebhookEvent).count()
 
     return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
+        request=request,
+        name="dashboard.html",
+        context={
             "dry_run": settings.dry_run,
             "forager_dry_run": settings.forager_dry_run,
             "hubspot_dry_run": settings.hubspot_dry_run,
