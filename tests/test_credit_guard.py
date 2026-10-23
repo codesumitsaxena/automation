@@ -119,6 +119,8 @@ def test_cache_hit_costs_zero_credits_and_real_call_counted_once():
             .scalar()
         )
         assert total_spent == 1, f"Expected total spent to be 1, got {total_spent}"
+        db.query(CreditUsage).filter(CreditUsage.run_id == run_id).delete()
+        db.commit()
 
 
 @pytest.mark.asyncio
@@ -198,4 +200,6 @@ async def test_company_service_cache_hit_spends_zero_credits():
             .scalar()
         )
         assert total_run_credits == 1
+        db.query(CreditUsage).filter(CreditUsage.run_id == run_id).delete()
+        db.commit()
 

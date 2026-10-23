@@ -132,6 +132,16 @@ class DataMapper:
             )
 
         loc = raw.get("location") if isinstance(raw.get("location"), dict) else {}
+        addrs = raw.get("addresses") if isinstance(raw.get("addresses"), list) and raw.get("addresses") else []
+        primary_addr = addrs[0] if addrs and isinstance(addrs[0], dict) else {}
+
+        linkedin_info = raw.get("linkedin_info") if isinstance(raw.get("linkedin_info"), dict) else {}
+        linkedin_url = raw.get("linkedin_url") or linkedin_info.get("public_profile_url")
+
+        industry_val = raw.get("industry")
+        if not industry_val and isinstance(linkedin_info.get("industry"), dict):
+            industry_val = linkedin_info["industry"].get("name")
+
         tech_list = raw.get("technologies") or []
         tech_str = ", ".join(tech_list[:25]) if isinstance(tech_list, list) else _clean_str(tech_list)
 
@@ -144,21 +154,27 @@ class DataMapper:
             raw.get("revenue_range"),
         )
 
+        founded_yr = raw.get("founded_year")
+        if not founded_yr and raw.get("founded_date") and len(str(raw.get("founded_date"))) >= 4:
+            founded_yr = str(raw["founded_date"])[:4]
+
+        emp_val = raw.get("employees_amount") or raw.get("headcount") or raw.get("employees_range")
+
         return NormalizedCompanyData(
             name=_clean_str(raw.get("name")),
             domain=_clean_str(raw.get("domain")) or "",
             website=_clean_str(raw.get("website_url") or raw.get("website")),
             description=_clean_str(raw.get("description") or raw.get("short_description")),
-            numberofemployees=_clean_str(raw.get("headcount") or raw.get("employees_range")),
+            numberofemployees=_clean_str(emp_val),
             annualrevenue=num_revenue,
             forager_revenue_range=rev_range,
-            industry=_clean_str(raw.get("industry")),
-            linkedin_company_page=_clean_str(raw.get("linkedin_url")),
+            industry=_clean_str(industry_val),
+            linkedin_company_page=_clean_str(linkedin_url),
             phone=_clean_str(raw.get("phone")),
-            city=_clean_str(loc.get("city")),
-            state=_clean_str(loc.get("state") or loc.get("state_code")),
-            country=_clean_str(loc.get("country") or loc.get("country_code")),
-            founded_year=_clean_str(raw.get("founded_year")),
+            city=_clean_str(loc.get("city") or primary_addr.get("city")),
+            state=_clean_str(loc.get("state") or loc.get("state_code") or primary_addr.get("state")),
+            country=_clean_str(loc.get("country") or loc.get("country_code") or primary_addr.get("country")),
+            founded_year=_clean_str(founded_yr),
             forager_tech_stack=tech_str,
             forager_funding_total=funding_str,
             forager_status="enriched",

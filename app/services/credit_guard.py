@@ -39,9 +39,10 @@ class RevealPlan:
 class CreditGuard:
     """Enforces credit budgets, estimates costs, and records credit transactions."""
 
-    def __init__(self, max_credits_per_run: int | None = None):
-        self.max_credits_per_run = max_credits_per_run or settings.max_credits_per_run
-        self.dry_run = settings.forager_dry_run
+    def __init__(self, max_credits_per_run: int | None = None, dry_run: bool | None = None):
+        s = get_settings()
+        self.max_credits_per_run = max_credits_per_run or s.max_credits_per_run
+        self.dry_run = s.forager_dry_run if dry_run is None else dry_run
 
     @staticmethod
     def estimate_run_cost(
@@ -224,6 +225,21 @@ class CreditGuard:
         actual_spend = 0 if self.dry_run else credits_needed
 
         with SessionLocal() as db:
+            if not self.dry_run and not is_cache_hit and actual_spend > 0:
+                total_real_spent = (
+                    db.query(func.coalesce(func.sum(CreditUsage.credits_spent), 0))
+                    .filter(CreditUsage.is_mock == False)
+                    .scalar()
+                )
+                hard_cap = 50
+                if (total_real_spent + actual_spend) > hard_cap:
+                    msg = (
+                        f"Hard credit cap (50 credits) would be exceeded! "
+                        f"Total spent so far: {total_real_spent}, required: {actual_spend}, cap: {hard_cap}"
+                    )
+                    logger.error(msg)
+                    raise CreditLimitExceededError(msg)
+
             if run_id and not is_cache_hit:
                 # Check credits spent in current run
                 run_spent = (

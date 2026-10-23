@@ -241,21 +241,27 @@ class ForagerClient:
         endpoint = self._resolve_endpoint(endpoint_template)
         req_hash = self._compute_hash(endpoint, payload)
 
-        # 1. Check SQLite Cache First
+        # 1. Check DRY_RUN Mode (mock mode strictly returns mock data and never mixes with real cache)
+        if self.dry_run:
+            logger.info("[DRY_RUN] Intercepted Forager call to %s. Consumed 0 credits.", endpoint)
+            if mock_filename:
+                return self._load_mock_file(mock_filename)
+            return {"data": [], "total": 0, "mock": True}
+
+        # 2. Live Request: Check SQLite Cache First (never pay twice for identical real query)
         cached = self._get_cached_response(req_hash)
         if cached:
             return cached
 
-        # 2. Check DRY_RUN Mode
-        if self.dry_run:
-            logger.info("[DRY_RUN] Intercepted Forager call to %s. Consumed 0 credits.", endpoint)
-            if mock_filename:
-                mock_data = self._load_mock_file(mock_filename)
-                self._save_cache_response(req_hash, endpoint, payload, mock_data, 0)
-                return mock_data
-            return {"data": [], "total": 0, "mock": True}
+        # 3. Live Request: Pre-flight hard credit cap check
+        from app.services.credit_guard import CreditGuard, CreditLimitExceededError
+        ledger = CreditGuard.get_ledger_summary()
+        remaining = ledger.get("credits_remaining", 0)
+        if remaining < credit_cost:
+            msg = f"Hard credit cap reached! Remaining balance: {remaining} credits is insufficient for operation costing {credit_cost} credits."
+            logger.error(msg)
+            raise CreditLimitExceededError(msg)
 
-        # 3. Live Request
         url = f"{self.base_url}{endpoint}"
         logger.info("Calling live Forager API: %s (estimated cost: %d credits)", url, credit_cost)
 
@@ -284,9 +290,19 @@ class ForagerClient:
             credit_cost=ForagerCreditCosts.ORGANIZATION_SEARCH,
             mock_filename="forager_organization_openai.json",
         )
-        data = res.get("data", [])
+        data = res.get("search_results") or res.get("results") or res.get("data") or []
         if data:
-            return data[0]
+            clean_dom = domain.lower().strip()
+            # Select best matching organization by name/domain and employee size
+            def match_score(item: dict[str, Any]) -> tuple[int, int, int]:
+                name = (item.get("name") or "").lower()
+                website = (item.get("website") or "").lower()
+                is_exact_domain = 1 if clean_dom in website else 0
+                is_name_match = 1 if name == "openai" or name == clean_dom.split(".")[0] else 0
+                emp = item.get("employees_amount") or item.get("headcount") or 0
+                return (is_name_match, is_exact_domain, emp)
+
+            return max(data, key=match_score)
         return None
 
     async def search_people_by_company(
@@ -310,7 +326,7 @@ class ForagerClient:
             credit_cost=ForagerCreditCosts.PERSON_ROLE_SEARCH,
             mock_filename="forager_people_openai.json",
         )
-        return res.get("data", [])
+        return res.get("search_results") or res.get("results") or res.get("data") or []
 
     async def get_person_details(
         self,
