@@ -385,6 +385,38 @@ If you wish to test against your live HubSpot portal:
    ```powershell
    python scripts/setup_hubspot_properties.py
    ```
+## Deploying to Render (Free Web Service)
+
+The repository includes a production-ready **Render Blueprint** (`render.yaml`) that configures a Python web service on Render's Free tier with zero credit card requirement.
+
+### Render Setup Steps
+1. Push your repository to GitHub.
+2. Log in to [Render Dashboard](https://dashboard.render.com/).
+3. Click **New +** > **Blueprint**.
+4. Connect your GitHub repository (`automation`).
+5. Render detects `render.yaml` automatically. Enter the secret variables marked with `sync: false` (`FORAGER_API_KEY`, `FORAGER_ACCOUNT_ID`, `HUBSPOT_ACCESS_TOKEN`, `HUBSPOT_CLIENT_SECRET`, `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`).
+6. Click **Apply** to deploy.
+7. Once deployed, note your service URL (e.g. `https://forager-hubspot-enrichment.onrender.com`), set `PUBLIC_BASE_URL` in the Render Environment tab, and save.
+
+### Render Notes (Free Tier Characteristics & Production Recommendations)
+
+When deploying on Render's Free plan, keep the following operational nuances in mind:
+
+1. **Spin Down & Cold Starts**:
+   - Render's Free web services automatically spin down (sleep) after **15 minutes of inactivity** (no incoming HTTP requests).
+   - The first request after spinning down triggers a **cold start**, typically taking **50 to 90 seconds** to wake up. Automated health checks, webhook tests, or dashboard views should allow adequate timeout for this initial spin-up.
+
+2. **Ephemeral Filesystem (SQLite & Ledger Lifecycle)**:
+   - Free instances do not support persistent volume disks. The local SQLite database (`enrichment.db`), cache tables, and credit ledger will reset whenever the service restarts, spins down, or redeploys.
+   - **Crucial Rule for Live Forager Runs**: All live Forager runs and tests must be executed in a single active session immediately after querying and verifying your actual account credit balance directly from Forager. Never assume previous lookups remain cached across instance restarts on the free tier.
+
+3. **Optional Keep-Alive Ping**:
+   - To prevent the service from sleeping during an active demonstration window, you can set up an external HTTP ping (e.g., via [UptimeRobot](https://uptimerobot.com/) or [cron-job.org](https://cron-job.org/)) calling `GET https://your-app.onrender.com/health` every **14 minutes**.
+   - **Plan Limitation**: Render provides **750 free instance hours per workspace per month**. A service pinged 24/7 will consume ~720–744 hours, which consumes the entire monthly allocation. Use keep-alive pings selectively during evaluation or demo periods.
+
+4. **Persistent Upgrades**:
+   - Upgrading to a paid plan (e.g. Starter tier) with a persistent SSD disk removes cold starts, prevents idle sleeping, and guarantees that SQLite database caches and audit ledgers persist permanently across all deployments.
+   - Verify the latest tiers, disks, and pricing on [Render Pricing](https://render.com/pricing).
 
 ---
 

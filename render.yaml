@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: forager-hubspot-enrichment
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FORAGER_DRY_RUN
+        value: "true"
+      - key: HUBSPOT_DRY_RUN
+        value: "false"
+      - key: MAX_CREDITS_PER_RUN
+        value: "8"
+      - key: ENABLE_EMAIL_REVEAL
+        value: "false"
+      - key: ENABLE_PHONE_REVEAL
+        value: "false"
+      - key: SAVE_RAW_RESPONSES
+        value: "false"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: VERIFY_WEBHOOK_SIGNATURE
+        value: "false"
+      - key: FORAGER_BASE_URL
+        value: https://api-v2.forager.ai
+      - key: DATABASE_URL
+        value: sqlite:///enrichment.db
+      - key: FORAGER_API_KEY
+        sync: false
+      - key: FORAGER_ACCOUNT_ID
+        sync: false
+      - key: HUBSPOT_ACCESS_TOKEN
+        sync: false
+      - key: HUBSPOT_CLIENT_SECRET
+        sync: false
+      - key: DASHBOARD_USERNAME
+        sync: false
+      - key: DASHBOARD_PASSWORD
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
